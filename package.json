@@ -12,11 +12,15 @@
     "debug": "~2.2.0",
     "express": "~4.13.1",
     "morgan": "~1.6.1",
+    "mysql": "^2.10.2",
     "node-env-file": "^0.1.8",
     "redis": "^1.0.0",
     "require-dir": "^0.3.0",
     "sequelize": "^3.6.0",
     "underscore": "^1.0.0",
     "url-join": "0.0.1"
+  },
+  "devDependencies": {
+    "async-profile": "^0.4.0"
   }
 }

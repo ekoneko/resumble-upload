@@ -1,13 +1,6 @@
 #!/usr/bin/env node
 
 /**
- * Load environment
- */
-var path = require('path');
-var env = require('node-env-file');
-env(path.join(__dirname, '..', '.env'));
-
-/**
  * Module dependencies.
  */
 

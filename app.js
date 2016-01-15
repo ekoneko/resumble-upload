@@ -3,6 +3,18 @@ var path = require('path');
 var favicon = require('serve-favicon');
 var bodyParser = require('body-parser');
 
+/**
+ * Load environment
+ */
+var path = require('path');
+var env = require('node-env-file');
+env('.env');
+
+var db = require('./code/services/db.js');
+var redis = require('./code/services/cache.js');
+db.init();
+redis.init();
+
 var routes = require('./code/routes.js');
 var app = express();
 
