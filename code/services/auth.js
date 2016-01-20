@@ -1,6 +1,8 @@
 var cacheService = require('./cache.js');
 var appService = require('./app.js');
 var crypto = require('crypto');
+var querystring = require('querystring');
+require('date-format-lite');
 
 var getAppId = function () {
     var appid = req.get('X-' + process.env.HEADPRE + '-appid');
@@ -13,13 +15,13 @@ var getToken = function () {
 }
 
 var getSign = function () {
-    var token = req.get('X-' + process.env.HEADPRE + '-sign');
-    return token;
+    var sign = req.get('X-' + process.env.HEADPRE + '-sign');
+    return sign;
 }
 
 var getTime = function () {
     var time = req.get('X-' + process.env.HEADPRE + '-time');
-    return time;
+    return +time;
 }
 
 var createToken = function () {
@@ -32,7 +34,7 @@ var createToken = function () {
         appService.get(appid)
             .then(function (data) {
                 if (!data) return reject('app not exists');
-                token = 'token:' + appid + ':' + md5(Date.now()) + Math.random().toString(36).slice(2);
+                token = 'token:' + appid + ':' + ((Date.now() + Math.random())*10000).toString(36).slice(2);
                 return cacheService.set(token, data, 1800)
             })
             .then(function () {
@@ -46,13 +48,19 @@ var createToken = function () {
 var verifySign = function (req, res) {
     return new Promise(function (resolve, reject) {
         var appid = getAppId(),
-            sign = getSign();
+            sign = getSign(),
+            time = getTime(),
+            hmac;
 
+        if (!time || (Date.now - time) > 3e5) return reject('time not match');
         if (!appid || !sign) return reject('verify sign failed');
         appService.get(appid)
             .then(function (data) {
+                var string;
                 if (!data) return reject('app not exists');
-                sign === appid + getTime() + data.secret
+                hmac = crypto.createHmac('sha1', data.secret);
+                string = querystring.stringify({"appid": appid, "url": req.url, "time": time});
+                sign === hmac.update(string).digest('hex') ? resolve() : reject('sign error');
             })
             .catch(reject);
     });

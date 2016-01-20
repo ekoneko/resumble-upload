@@ -8,7 +8,8 @@ this.token = function (req, res, next) {
         })
         .then(function (token) {
             res.send({
-                token: token
+                token: token,
+                expire: Date.now() + 18e5
             });
         })
         .catch(function (err) {
