@@ -2,7 +2,6 @@ var cacheService = require('./cache.js');
 var appService = require('./app.js');
 var crypto = require('crypto');
 var querystring = require('querystring');
-require('date-format-lite');
 
 var getAppId = function () {
     var appid = req.get('X-' + process.env.HEADPRE + '-appid');
@@ -24,7 +23,7 @@ var getTime = function () {
     return +time;
 }
 
-var createToken = function () {
+var createToken = function (req, res) {
     return new Promise(function (resolve, reject) {
         var appid = getAppId(),
             token;
@@ -91,3 +90,4 @@ var tokenGenerator = function (data, secret) {
 
 module.exports = auth;
 module.exports.createToken = createToken;
+module.exports.verifySign = verifySign;

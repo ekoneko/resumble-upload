@@ -2,6 +2,9 @@ var express = require('express');
 var path = require('path');
 var favicon = require('serve-favicon');
 var bodyParser = require('body-parser');
+var webpack = require('webpack');
+var webpackDevMiddleware = require('webpack-dev-middleware');
+var webpackHotMiddleware = require('webpack-hot-middleware');
 
 /**
  * Load environment
@@ -23,8 +26,26 @@ if (process.env.DEV) {
     var p = new AsyncProfile();
 }
 
+/**
+ * webpack
+ */
+var webpackConfig = require('./webpack.config');
+var compiler = webpack(webpackConfig);
+app.use(webpackDevMiddleware(compiler, {
+    noInfo: true,
+    publicPath: '/'
+}));
+app.use(webpackHotMiddleware(compiler, {}));
+
+
 app.use('/', routes);
+
 // view engine setup
+var hbs = require('express-hbs');
+app.engine('hbs', hbs.express3({
+  partialsDir: path.join(__dirname, 'code/views'),
+}));
+
 app.set('views', path.join(__dirname, 'code/views'));
 app.set('view engine', 'hbs');
 
@@ -32,7 +53,6 @@ app.set('view engine', 'hbs');
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(express.static(path.join(__dirname, 'public')));
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

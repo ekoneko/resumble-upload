@@ -4,7 +4,7 @@ this.token = function (req, res, next) {
     var token;
     authService.verifySign(req, res)
         .then(function () {
-            return authService.createToken();
+            return authService.createToken(req, res);
         })
         .then(function (token) {
             res.send({
