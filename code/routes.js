@@ -21,7 +21,7 @@ router.get('/node_modules/*', function (req, res, next) {
 });
 router.get('/ping', controllers.test.ping);
 router.get('/test/auth', controllers.test.auth);
-router.get('/token', controllers.auth.token);
+router.get('/token/create', controllers.auth.createtoken);
 router.all('/upload', auth, multipartMiddleware, controllers.file.upload);
 
 module.exports = router;

@@ -10,6 +10,15 @@ this.create = function (name) {
 
 this.find = function (id) {
     // TODO: cache
+    if (id === 0) {
+        return new Promise(function (resolve, reject) {
+            resolve({
+                id: 0,
+                name: 'test',
+                secret: '123456'
+            })
+        });
+    }
     return db.model('app').findOne({
         where: {
             id: id

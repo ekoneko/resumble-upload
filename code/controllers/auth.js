@@ -1,6 +1,6 @@
 var authService = require('../services/auth.js');
 
-this.token = function (req, res, next) {
+this.createtoken = function (req, res, next) {
     var token;
     authService.verifySign(req, res)
         .then(function () {
@@ -13,6 +13,7 @@ this.token = function (req, res, next) {
             });
         })
         .catch(function (err) {
+            console.error(err);
             res.status(500);
             res.send(typeof err === 'string' ? err : 'create token error');
         })

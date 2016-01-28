@@ -1,0 +1,50 @@
+0 info it worked if it ends with ok
+1 verbose cli [ '/usr/local/bin/node',
+1 verbose cli   '/usr/local/bin/npm',
+1 verbose cli   'i',
+1 verbose cli   '-g',
+1 verbose cli   'mocha-browser~0.3.0' ]
+2 info using npm@3.3.12
+3 info using node@v5.2.0
+4 silly loadCurrentTree Starting
+5 silly install loadCurrentTree
+6 silly install readGlobalPackageData
+7 silly fetchPackageMetaData mocha-browser~0.3.0
+8 silly fetchOtherPackageData mocha-browser~0.3.0
+9 silly cache add args [ 'mocha-browser~0.3.0', null ]
+10 verbose cache add spec mocha-browser~0.3.0
+11 silly cache add parsed spec Result {
+11 silly cache add   raw: 'mocha-browser~0.3.0',
+11 silly cache add   scope: null,
+11 silly cache add   name: null,
+11 silly cache add   rawSpec: 'mocha-browser~0.3.0',
+11 silly cache add   spec: '/Users/eko/Code/www/node/uploader/mocha-browser~0.3.0',
+11 silly cache add   type: 'local' }
+12 error addLocal Could not install /Users/eko/Code/www/node/uploader/mocha-browser~0.3.0
+13 silly fetchPackageMetaData Error: ENOENT: no such file or directory, open '/Users/eko/Code/www/node/uploader/mocha-browser~0.3.0'
+13 silly fetchPackageMetaData     at Error (native)
+13 silly fetchPackageMetaData  error for mocha-browser~0.3.0 { [Error: ENOENT: no such file or directory, open '/Users/eko/Code/www/node/uploader/mocha-browser~0.3.0']
+13 silly fetchPackageMetaData   errno: -2,
+13 silly fetchPackageMetaData   code: 'ENOENT',
+13 silly fetchPackageMetaData   syscall: 'open',
+13 silly fetchPackageMetaData   path: '/Users/eko/Code/www/node/uploader/mocha-browser~0.3.0' }
+14 silly rollbackFailedOptional Starting
+15 silly rollbackFailedOptional Finishing
+16 silly runTopLevelLifecycles Starting
+17 silly runTopLevelLifecycles Finishing
+18 silly install printInstalled
+19 verbose stack Error: ENOENT: no such file or directory, open '/Users/eko/Code/www/node/uploader/mocha-browser~0.3.0'
+19 verbose stack     at Error (native)
+20 verbose cwd /Users/eko/Code/www/node/uploader
+21 error Darwin 13.4.0
+22 error argv "/usr/local/bin/node" "/usr/local/bin/npm" "i" "-g" "mocha-browser~0.3.0"
+23 error node v5.2.0
+24 error npm  v3.3.12
+25 error path /Users/eko/Code/www/node/uploader/mocha-browser~0.3.0
+26 error code ENOENT
+27 error errno -2
+28 error syscall open
+29 error enoent ENOENT: no such file or directory, open '/Users/eko/Code/www/node/uploader/mocha-browser~0.3.0'
+29 error enoent This is most likely not a problem with npm itself
+29 error enoent and is related to npm not being able to find a file.
+30 verbose exit [ -2, true ]
