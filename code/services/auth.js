@@ -31,7 +31,7 @@ var createToken = function (req, res) {
         appService.find(appid)
             .then(function (data) {
                 if (!data) return reject('app not exists');
-                token = appid + ':' + ((Date.now() + Math.random())*10000).toString(36).slice(2);
+                token = tokenGenerator(appid);
                 return cacheService.set(token, data, 1800)
             })
             .then(function () {
@@ -82,8 +82,8 @@ var auth = function (req, res, next) {
     })
 }
 
-var tokenGenerator = function (data, secret) {
-    // 
+var tokenGenerator = function (appid) {
+    return appid + ':' + ((Date.now() + Math.random())*10000).toString(36).slice(2)
 }
 
 module.exports = auth;

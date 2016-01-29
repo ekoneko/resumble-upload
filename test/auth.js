@@ -3,9 +3,11 @@ env('.env');
 var http = require('http');
 var crypto = require('crypto');
 var querystring = require('querystring');
+var assert = require('chai').assert;
 
 describe('auth', () => {
-    it('token',(done) => {
+    var token;
+    before((done) => {
         var data = '';
         var headers = {};
         var path = '/token/create';
@@ -32,6 +34,7 @@ describe('auth', () => {
                     throw (data)
                 }
                 if (dataDecode && dataDecode.token) {
+                    token = dataDecode.token;
                     done();
                 } else {
                     throw (data)
@@ -39,9 +42,12 @@ describe('auth', () => {
             })
         })
         .on('error', (e) => {
-            console.log(e)
             throw e
         })
         req.end()
+    })
+
+    it('token',() => {
+        assert.isNotNull(token)
     });
 });
