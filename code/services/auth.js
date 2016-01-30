@@ -1,5 +1,4 @@
 var cacheService = require('./cache.js');
-var appService = require('./app.js');
 var crypto = require('crypto');
 var querystring = require('querystring');
 
@@ -23,12 +22,12 @@ var getTime = function (req) {
     return +time;
 }
 
-var createToken = function (req, res) {
+var createToken = function (req, findSecretFunc) {
     return new Promise(function (resolve, reject) {
         var appid = getAppId(req),
             token;
 
-        appService.find(appid)
+        findSecretFunc(appid)
             .then(function (data) {
                 if (!data) return reject('app not exists');
                 token = tokenGenerator(appid);
@@ -42,7 +41,7 @@ var createToken = function (req, res) {
     })
 }
 
-var verifySign = function (req, res) {
+var verifySign = function (req, findSecretFunc) {
     return new Promise(function (resolve, reject) {
         var appid = getAppId(req),
             sign = getSign(req),
@@ -51,7 +50,7 @@ var verifySign = function (req, res) {
 
         if (!time || (Date.now - time) > 3e5) return reject('time not match');
         if (appid === NaN || !sign) return reject('verify sign failed');
-        appService.find(appid)
+        findSecretFunc(appid)
             .then(function (data) {
                 var string;
                 if (!data) return reject('app not exists');
@@ -63,29 +62,25 @@ var verifySign = function (req, res) {
     });
 }
 
-var auth = function (req, res, next) {
-    var promise = new Promise(function (resolve, reject) {
+var auth = function (req) {
+    return promise = new Promise(function (resolve, reject) {
         var appid = getAppId(req),
             token = getToken(req);
 
-        if (!appid || !token) return reject('auth failed');
+        if (appid === NaN || !token) return reject('auth failed');
 
         return cacheService.get(token)
             .then(function (data) {
-                +data.id === appid ? resolve() : reject();
+                data && +data.id === appid ? resolve(data) : reject();
             })
             .catch(reject);
     });
-    promise.then(next).catch(function (err) {
-        res.status(403);
-        res.send(typeof err === 'string' ? err : 'auth failed');
-    })
 }
 
 var tokenGenerator = function (appid) {
     return appid + ':' + ((Date.now() + Math.random())*10000).toString(36).slice(2)
 }
 
-module.exports = auth;
+module.exports.auth = auth;
 module.exports.createToken = createToken;
 module.exports.verifySign = verifySign;

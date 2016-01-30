@@ -22,6 +22,8 @@ var routes = require('./code/routes.js');
 var app = express();
 
 if (process.env.DEV) {
+    var logger = require('morgan');
+    app.use(logger('dev'));
     var AsyncProfile = require('async-profile')
     var p = new AsyncProfile();
 }
