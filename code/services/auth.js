@@ -67,6 +67,12 @@ var auth = function (req) {
         var appid = getAppId(req),
             token = getToken(req);
 
+        if (!+process.env.AUTH) {
+            return resolve({
+                id: 0
+            })
+        }
+
         if (appid === NaN || !token) return reject('auth failed');
 
         return cacheService.get(token)

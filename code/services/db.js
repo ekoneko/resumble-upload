@@ -11,7 +11,7 @@ this.init = function () {
         host: dbConfig.host,
         dialect: dbConfig.driver,
         port:    dbConfig.port,
-        logging: process.env.DBLOG ? console.log : null
+        logging: +process.env.DBLOG ? console.log : null
     });
     __db.authenticate().catch(function (err) {
         console.error(err);

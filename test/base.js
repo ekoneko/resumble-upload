@@ -47,13 +47,14 @@ var request = (options, postData, formData) => {
             })
         });
         req.on('error', reject);
-        if (formData) {
-            formData.pipe(req);
-        }
         if (postData) {
             req.write(postData);
         }
-        req.end();
+        if (formData) {
+            formData.pipe(req)
+        } else {
+            req.end()
+        }
     })
 }
 

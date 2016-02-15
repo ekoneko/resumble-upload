@@ -9,8 +9,7 @@ this.create = function (name) {
 }
 
 this.find = function (id) {
-    // TODO: cache
-    if (id === 0) {
+    if (id === 0 && +process.env.DEV) {
         return new Promise(function (resolve, reject) {
             resolve({
                 id: 0,
