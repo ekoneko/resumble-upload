@@ -11,7 +11,7 @@ var getTinyFileName = function () {
 }
 
 this.upload = function (req, res, next) {
-    var fileInfo, fileExt, task;
+    var fileInfo, fileExt, task, destPath, offset;
 
     fileExt = path.extname(req.body.filename);
     
@@ -23,17 +23,48 @@ this.upload = function (req, res, next) {
         offset: +req.body.offset,
         chunksize: +req.body.chunksize
     }
-    if (fileInfo.offset === 0 && fileInfo.filesize < fileInfo.chunksize && process.env.TINYSTORGE) {
-        task = fileService.writeFile(path.resolve(process.env.TINYSTORGE, getTinyFileName()) + fileExt, req.files.data.path);
+
+    if (fileInfo.offset === 0 && fileInfo.filesize < fileInfo.chunksize && process.env.TINYSTORAGEDIR) {
+        destPath = path.resolve(process.env.TINYSTORAGEDIR, getTinyFileName()) + fileExt;
+        task = fileService.writeFile(destPath, req.files.data.path, fileInfo.chunksize);
     } else {
         task = fileInfo.offset === 0 ? fileService.create(fileInfo) : fileService.find(fileInfo);
         task.then(function (data) {
-            return fileService.writeFile(path.resolve(process.env.TMPDIR, data.path), req.files.data.path);
+            destPath = path.resolve(process.env.TMPDIR, data.path);
+            return fileService.checkVerify(destPath, fileInfo.offset).then(function (resolved) {
+                if (resolved !== undefined) {
+                    res.status(200);
+                    res.send({
+                        state: false,
+                        offset: resolved
+                    })
+                    res.end();
+                    throw 'file size not match'
+                }
+            })
+        }).then(function () {
+            return fileService.writeFile(destPath, req.files.data.path, fileInfo.filesize).then(function () {
+                return fileService.checkVerify(destPath, fileInfo.filesize)
+            }).then(function (resolved) {
+                var promise;
+                if (resolved === undefined) {
+                    storagePath = destPath.replace(process.env.TMPDIR, process.env.STORAGEDIR);
+                    promise = fileService.moveFile(storagePath, destPath);
+                    destPath = storagePath;
+                    return promise;
+                } else {
+                    offset = resolved;
+                }
+            })
         })
     }
-    task.then(function () {
-
+    task.then(function (resolved) {
+        var result = {state: true};
+        offset ? result.offset = offset : result.path = destPath;
+        res.send(result);
+    }).catch(function (err) {
+        res.status(500);
+        res.send(typeof err === 'string' ? err : 'create token error');
     })
-    // req.files.data.path
-    res.send('success');
+    
 }

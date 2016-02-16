@@ -35,7 +35,7 @@ var tokenGenerator = () => {
     })
 }
 
-var request = (options, postData, formData) => {
+var request = (options, postData) => {
     return new Promise(function (resolve, reject) {
         var data = '';
         var req = http.request(options, (res) => {
@@ -50,11 +50,7 @@ var request = (options, postData, formData) => {
         if (postData) {
             req.write(postData);
         }
-        if (formData) {
-            formData.pipe(req)
-        } else {
-            req.end()
-        }
+        req.end()
     })
 }
 
