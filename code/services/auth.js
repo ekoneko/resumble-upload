@@ -72,7 +72,6 @@ var auth = function (req) {
                 id: 0
             })
         }
-
         if (appid === NaN || !token) return reject('auth failed');
 
         return cacheService.get(token)

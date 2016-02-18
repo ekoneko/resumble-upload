@@ -1,10 +1,19 @@
+require('date-format-lite');
 var path = require('path');
 var fs = require('fs');
 var mkdirp = require('mkdirp');
 var commonConfig = require(path.join(process.cwd(), 'configs', 'common'));
 var _ = require('underscore');
 var cache = require('./cache.js');
-var db = require('./db.js');
+var db = require('./db.js').getInstance();
+
+/**
+ * @key sign
+ * @param file
+ * @param time  // last search time
+ * @param data  // row
+ */
+var cacheStack = {};
 
 var openFile = function (filePath, flag) {
     flag = flag || 'r';
@@ -16,15 +25,37 @@ var openFile = function (filePath, flag) {
     })
 }
 
-this.create = function (fileInfo) {
-    // 
+this.create = function (fileInfo, appid) {
+    return db.model('file').create({
+        appid: appid,
+        file: fileInfo.filesign,
+        filemd5: '',
+        filesize: fileInfo.filesize,
+        uploadsize: 0,
+        path: path.join((new Date()).format('YYYY/MM/DD'), path.basename(fileInfo.filesign)),
+        comment: fileInfo.comment || '',
+    }).then(function (res) {
+        return res ? res.dataValues : undefined;
+    })
 }
 
 this.find = function (fileInfo) {
-    // 
+
+    return db.model('file').findOne({
+        where: {file: fileInfo.filesign}
+    }).then(function (res) {
+        return res ? res.dataValues : undefined;
+    });
 }
 
-this.writeFile = function (destPath, srcPath, size) {
+this.update = function (data, id) {
+    return db.model('file').update(data, {
+        where: {id: id},
+        limit: 1
+    });
+}
+
+this.writeFile = function (destPath, srcPath) {
     return new Promise(function (resolve, reject) {
         var pathInfo = path.parse(destPath);
         mkdirp(pathInfo.dir, function (err) {
@@ -32,13 +63,16 @@ this.writeFile = function (destPath, srcPath, size) {
         })
     }).then(function () {
         return Promise.all([
-            openFile(destPath, 'w'),
+            openFile(destPath, 'a'),
             openFile(srcPath)
         ]);
     }).then(function (resolved) {
         var destFd = resolved[0],
             srcFd = resolved[1],
-            buffer = new Buffer(size);
+            size, buffer;
+
+        size = fs.fstatSync(srcFd).size;
+        buffer = new Buffer(size);
 
         return new Promise(function (resolve, reject) {
             fs.read(srcFd, buffer, 0, size, 0, function (err, bytesRead, buffer) {
@@ -58,14 +92,27 @@ this.writeFile = function (destPath, srcPath, size) {
                 });
             });
         });
+    });
+}
+
+this.moveFile = function (destPath, srcPath) {
+    return new Promise(function (resolve, reject) {
+        var pathInfo = path.parse(destPath);
+        mkdirp(pathInfo.dir, function (err) {
+            if (err) reject(err)
+            fs.rename(srcPath, destPath, function (err) {
+                err ? reject(err) : resolve();
+            });
+        })
     })
 }
 
-this.checkVerify = function (filePath, size) {
+this.countSize = function (filePath) {
     return new Promise(function (resolve, reject) {
+        if (!fs.existsSync(filePath)) return resolve(0);
         fs.stat(filePath, function (err, stats) {
             if (err) return reject(err);
-            stats.size === size ? resolve() : resolve(stats.size)
+            resolve(stats.size)
         })
     })
 }

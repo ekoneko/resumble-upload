@@ -6,12 +6,12 @@ var getTinyFileName = function () {
     var result, date = new Date();
 
     result = date.format('YYYY/MM/DD/hhmmssSS');
-    result += Math.random().toString(36).substr(2);
+    result += Math.random().toString(36).substr(2, 6);
     return result;
 }
 
 this.upload = function (req, res, next) {
-    var fileInfo, fileExt, task, destPath, offset;
+    var fileInfo, fileExt, task, destPath, destUrl, offset, error = '';
 
     fileExt = path.extname(req.body.filename);
     
@@ -21,50 +21,78 @@ this.upload = function (req, res, next) {
         filename: req.body.filename,
         filesign: req.body.filesign,
         offset: +req.body.offset,
-        chunksize: +req.body.chunksize
+        chunksize: +req.body.chunksize,
+        comment: req.body.comment
     }
 
     if (fileInfo.offset === 0 && fileInfo.filesize < fileInfo.chunksize && process.env.TINYSTORAGEDIR) {
         destPath = path.resolve(process.env.TINYSTORAGEDIR, getTinyFileName()) + fileExt;
-        task = fileService.writeFile(destPath, req.files.data.path, fileInfo.chunksize);
+        destUrl = destPath.replace(process.env.TINYSTORAGEDIR, process.env.TINYSTORAGEURL);
+        task = fileService.writeFile(destPath, req.files.data.path);
     } else {
-        task = fileInfo.offset === 0 ? fileService.create(fileInfo) : fileService.find(fileInfo);
-        task.then(function (data) {
-            destPath = path.resolve(process.env.TMPDIR, data.path);
-            return fileService.checkVerify(destPath, fileInfo.offset).then(function (resolved) {
-                if (resolved !== undefined) {
-                    res.status(200);
-                    res.send({
-                        state: false,
-                        offset: resolved
+        task = fileService.find(fileInfo).then(function (row) {
+            var fileRow;
+            if (row && row.uploadsize === row.filesize) {
+                destUrl = (process.env.STORAGEURL + row.path).replace(/\/+/g, '/');
+                return
+            }
+            if (row && row.uploadsize !== fileInfo.offset) {
+                offset = row.uploadsize;
+                return;
+            }
+
+            return new Promise(function (resolve, reject) {
+                row ? resolve(row) : fileService.create(fileInfo, req.access.id).then(function (row) {
+                    resolve(row)
+                });
+            }).then(function (row) {
+                fileRow = row;
+                destPath = path.resolve(process.env.TEMPDIR, fileRow.path);
+                return fileService.countSize(destPath);
+            }).then(function (size) {
+                if (size !== fileInfo.offset) {
+                    return size;
+                }
+                return fileService.writeFile(destPath, req.files.data.path).then(function () {
+                    return fileService.countSize(destPath);
+                })
+            }).then(function (size) {
+                var tempPath;
+                if (size === fileInfo.filesize) {
+                    tempPath = destPath;
+                    destPath = destPath.replace(process.env.TEMPDIR, '');
+                    destUrl = process.env.STORAGEURL + destPath;
+                    destPath = process.env.STORAGEDIR + destPath;
+                    return fileService.moveFile(destPath, tempPath).then(function () {
+                        return size;
                     })
-                    res.end();
-                    throw 'file size not match'
-                }
-            })
-        }).then(function () {
-            return fileService.writeFile(destPath, req.files.data.path, fileInfo.filesize).then(function () {
-                return fileService.checkVerify(destPath, fileInfo.filesize)
-            }).then(function (resolved) {
-                var promise;
-                if (resolved === undefined) {
-                    storagePath = destPath.replace(process.env.TMPDIR, process.env.STORAGEDIR);
-                    promise = fileService.moveFile(storagePath, destPath);
-                    destPath = storagePath;
-                    return promise;
                 } else {
-                    offset = resolved;
+                    offset = size;
+                    return size;
                 }
-            })
+            }).then(function (size) {
+                return fileService.update({
+                    uploadsize: size
+                }, fileRow.id);
+            });
         })
     }
-    task.then(function (resolved) {
-        var result = {state: true};
-        offset ? result.offset = offset : result.path = destPath;
+    task.then(function () {
+        var result;
+        if (!offset && !destUrl) {
+            return res.send({state: false, offset: 0})
+        }
+        result = {state: true};
+        if (offset) {
+            result.offset = offset;
+        } else {
+            result.url = destUrl.replace(/\/+/g, '/');
+        }
         res.send(result);
     }).catch(function (err) {
+        console.error(err)
         res.status(500);
-        res.send(typeof err === 'string' ? err : 'create token error');
+        if (err && err.message) err = err.message
+        res.send(typeof err === 'string' ? err : 'upload failed');
     })
-    
 }

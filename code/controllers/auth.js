@@ -27,6 +27,7 @@ this.auth = function (req, res, next) {
             next();
         })
         .catch(function (err) {
+            console.error(err)
             res.status(403);
             res.send(typeof err === 'string' ? err : 'auth failed');
         });
