@@ -7,13 +7,7 @@ var _ = require('underscore');
 var cache = require('./cache.js');
 var db = require('./db.js').getInstance();
 
-/**
- * @key sign
- * @param file
- * @param time  // last search time
- * @param data  // row
- */
-var cacheStack = {};
+var cacheExpireTime = 600;
 
 var openFile = function (filePath, flag) {
     flag = flag || 'r';
@@ -35,24 +29,64 @@ this.create = function (fileInfo, appid) {
         path: path.join((new Date()).format('YYYY/MM/DD'), path.basename(fileInfo.filesign)),
         comment: fileInfo.comment || '',
     }).then(function (res) {
-        return res ? res.dataValues : undefined;
+        var data = res ? res.dataValues : undefined;
+        if (data) {
+            return cache.set(fileInfo.filesign, data, cacheExpireTime).then(function () {
+                return data;
+            });
+        }
     })
 }
 
 this.find = function (fileInfo) {
+    return cache.get(fileInfo.filesign).then(function (data) {
+        if (!data) {
+            return db.model('file').findOne({
+                where: {file: fileInfo.filesign}
+            }).then(function (res) {
+                data = res ? res.dataValues : undefined;
+                if (data) {
+                    return cache.set(fileInfo.filesign, data, cacheExpireTime);
+                }
+            }).then(function () {
+                return data;
+            });
+        }
+        return data;
+    })
+    
+}
 
-    return db.model('file').findOne({
-        where: {file: fileInfo.filesign}
-    }).then(function (res) {
-        return res ? res.dataValues : undefined;
+this.update = function (updateData, fileInfo) {
+    var data;
+    return cache.get(fileInfo.filesign).then(function (cacheData) {
+        if (!cacheData) return;
+        data = _.extend(cacheData, updateData);
+        if (updateData.uploadsize && data.uploadsize >= data.filesize) {
+            return Promise.all([
+                db.model('file').update(data, {
+                    where: {id: data.id},
+                    limit: 1
+                }),
+                cache.remove(fileInfo.filesign)
+            ]);
+        } else {
+            return cache.set(fileInfo.filesign, data, cacheExpireTime);
+        }
+    }).then(function () {
+        return data;
     });
 }
 
-this.update = function (data, id) {
-    return db.model('file').update(data, {
-        where: {id: id},
-        limit: 1
-    });
+this.updateUploadSize = function (sign) {
+    db.model('file').findOne({
+        where: {file: sign}
+    }).then(function (row) {
+        var uploadSize, filePath = path.resolve(process.env.TEMPDIR, row.dataValues.path);
+        if (!fs.existsSync(filePath)) return;
+        uploadSize = fs.lstatSync(filePath).size;
+        return row.set('uploadsize', uploadSize).save();
+    })
 }
 
 this.writeFile = function (destPath, srcPath) {

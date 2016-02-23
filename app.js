@@ -18,6 +18,7 @@ var redis = require('./code/services/cache.js');
 db.init();
 redis.init();
 
+var tasks = require('./code/tasks.js');
 var routes = require('./code/routes.js');
 var app = express();
 

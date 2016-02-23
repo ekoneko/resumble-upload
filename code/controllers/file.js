@@ -11,6 +11,8 @@ var getTinyFileName = function () {
 }
 
 this.upload = function (req, res, next) {
+    var cacheService = require('../services/cache.js');
+
     var fileInfo, fileExt, task, destPath, destUrl, offset, error = '';
 
     fileExt = path.extname(req.body.filename);
@@ -26,10 +28,16 @@ this.upload = function (req, res, next) {
     }
 
     if (fileInfo.offset === 0 && fileInfo.filesize < fileInfo.chunksize && process.env.TINYSTORAGEDIR) {
+        /**
+         * simple upload
+         */
         destPath = path.resolve(process.env.TINYSTORAGEDIR, getTinyFileName()) + fileExt;
         destUrl = destPath.replace(process.env.TINYSTORAGEDIR, process.env.TINYSTORAGEURL);
         task = fileService.writeFile(destPath, req.files.data.path);
     } else {
+        /**
+         * upload with state storage
+         */
         task = fileService.find(fileInfo).then(function (row) {
             var fileRow;
             if (row && row.uploadsize === row.filesize) {
@@ -46,6 +54,9 @@ this.upload = function (req, res, next) {
                     resolve(row)
                 });
             }).then(function (row) {
+                if (!row) {
+                    throw 'file not exists and create faield';
+                }
                 fileRow = row;
                 destPath = path.resolve(process.env.TEMPDIR, fileRow.path);
                 return fileService.countSize(destPath);
@@ -73,7 +84,7 @@ this.upload = function (req, res, next) {
             }).then(function (size) {
                 return fileService.update({
                     uploadsize: size
-                }, fileRow.id);
+                }, fileInfo);
             });
         })
     }
