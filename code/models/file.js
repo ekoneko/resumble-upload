@@ -12,8 +12,9 @@ module.exports = {
             allowNull: false,
         },
         file: {
-            type: Sequelize.STRING(100),
+            type: Sequelize.STRING(200),
             allowNull: false,
+            unique: true,
             comment: "文件识别标识"
         },
         filemd5: {
@@ -34,7 +35,7 @@ module.exports = {
             comment: "文件已上传大小"
         },
         path: {
-            type: Sequelize.STRING(50),
+            type: Sequelize.STRING(200),
             allowNull: false,
             comment: "相对物理地址"
         },
@@ -48,7 +49,7 @@ module.exports = {
     options: {
         indexes: [
             {fields: ['appid']},
-            {fields: ['filemd5', 'filesize']}
+            {fields: ['file'], unique: true}
         ]
     }
 }

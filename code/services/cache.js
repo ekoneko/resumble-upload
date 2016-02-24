@@ -6,6 +6,9 @@ var redis = require('redis'),
 
 this.init = function () {
     __client = redis.createClient(configs.port, configs.host, configs.options);
+    if (process.env.REDISDB) {
+        __client.select(+process.env.REDISDB);
+    }
     __prefix = configs.prefix || '';
 }
 
