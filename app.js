@@ -2,9 +2,6 @@ var express = require('express');
 var path = require('path');
 var favicon = require('serve-favicon');
 var bodyParser = require('body-parser');
-var webpack = require('webpack');
-var webpackDevMiddleware = require('webpack-dev-middleware');
-var webpackHotMiddleware = require('webpack-hot-middleware');
 
 /**
  * Load environment
@@ -28,17 +25,6 @@ if (process.env.DEV) {
     var AsyncProfile = require('async-profile')
     var p = new AsyncProfile();
 }
-
-/**
- * webpack
- */
-var webpackConfig = require('./webpack.config');
-var compiler = webpack(webpackConfig);
-app.use(webpackDevMiddleware(compiler, {
-    noInfo: true,
-    publicPath: '/'
-}));
-app.use(webpackHotMiddleware(compiler, {}));
 
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 app.use(bodyParser.json());
