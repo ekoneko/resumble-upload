@@ -2,6 +2,9 @@ var path = require('path');
 require('date-format-lite');
 var fileService = require('../services/file.js');
 
+/**
+ * generator a filename for tiny file
+ */
 var getTinyFileName = function () {
     var result, date = new Date();
 
@@ -10,13 +13,16 @@ var getTinyFileName = function () {
     return result;
 }
 
+/**
+ * upload file
+ */
 this.upload = function (req, res, next) {
     var cacheService = require('../services/cache.js');
 
     var fileInfo, fileExt, task, destPath, destUrl, offset, error = '';
 
     fileExt = path.extname(req.body.filename);
-    
+
     res.set('Access-Control-Allow-Origin', '*');
     fileInfo = {
         filesize: +req.body.filesize,
@@ -40,16 +46,18 @@ this.upload = function (req, res, next) {
          */
         task = fileService.find(fileInfo).then(function (row) {
             var fileRow;
+            /* if file exists and had uploaded */
             if (row && row.uploadsize === row.filesize) {
                 destUrl = (process.env.STORAGEURL + row.path).replace(/\/+/g, '/');
                 return
             }
+            /* if file exists but not uploaded over */
             if (row && row.uploadsize !== fileInfo.offset) {
                 offset = row.uploadsize;
                 return;
             }
-
             return new Promise(function (resolve, reject) {
+                /* create if not exists */
                 row ? resolve(row) : fileService.create(fileInfo, req.access.id).then(function (row) {
                     resolve(row)
                 });
@@ -64,12 +72,16 @@ this.upload = function (req, res, next) {
                 if (size !== fileInfo.offset) {
                     return size;
                 }
+                /* write file */
                 return fileService.writeFile(destPath, req.files.data.path).then(function () {
                     return fileService.countSize(destPath);
                 })
             }).then(function (size) {
                 var tempPath;
                 if (size === fileInfo.filesize) {
+                    /**
+                     * upload over
+                     */
                     tempPath = destPath;
                     destPath = destPath.replace(process.env.TEMPDIR, '');
                     destUrl = process.env.STORAGEURL + destPath;
