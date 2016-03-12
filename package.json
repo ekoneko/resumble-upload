@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node ./bin/www"
+    "start": "node ./bin/www",
+    "install": "node ./bin/init"
   },
   "dependencies": {
     "body-parser": "~1.13.2",
@@ -18,7 +19,7 @@
     "redis": "^1.0.0",
     "require-dir": "^0.3.0",
     "sequelize": "^3.6.0",
-    "underscore": "^1.0.0",
+    "underscore": "^1.0.0"
   },
   "devDependencies": {
     "async-profile": "^0.4.0",

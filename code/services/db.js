@@ -7,6 +7,7 @@ var models = requireDir('../models');
 var __db;
 
 this.init = function () {
+    var promises = [];
     __db = new Sequelize(dbConfig.database, dbConfig.user, dbConfig.password, {
         host: dbConfig.host,
         dialect: dbConfig.driver,
@@ -21,9 +22,10 @@ this.init = function () {
     _.each(models, function (model, name) {
         var modelObject = __db.define(name, model.attributes, model.options);
         if (process.env.INITDB) {
-            modelObject.sync();
+            promises.push(modelObject.sync());
         }
     });
+    return Promise.all(promises);
 }
 
 this.getInstance = function () {
